@@ -1,0 +1,103 @@
+C:\wamp\www\Symfony>php bin/console doctrine:database:create
+Created database `symfony` for connection named default
+
+C:\wamp\www\Symfony>php bin/console doctrine:generate:entity
+genere un entite title , date , contenu ...ect 
+
+
+C:\wamp\www\Symfony>php bin/console doctrine:schema:update --dump-sql
+affichie la requette sql corespend a cette entitée
+
+C:\wamp\www\Symfony>php bin/console doctrine:schema:update --force
+execute la requette
+
+C:\wamp\www\Symfony>php bin/console doctrine:generate:entities OCPlatformBundle:Advert
+Generating entity "OC\PlatformBundle\Entity\Advert"
+
+pour metre a jour une entite ,apres un ajoute d'un champ par exemple
+
+php bin/console doctrine:schema:update --dump-sql
+C:\wamp\www\Symfony>php bin/console doctrine:schema:update --force
+
+
+----------------------------------------------<?php
+// src/OC/PlatformBundle/Controller/AdvertController.php
+
+namespace OC\PlatformBundle\Controller;
+
+use OC\PlatformBundle\Entity\Advert;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\HttpFoundation\Request;
+
+class AdvertController extends Controller
+{
+  public function addAction(Request $request)
+  {
+    // Création de l'entité
+    $advert = new Advert();
+    $advert->setTitle('Recherche développeur Symfony.');
+    $advert->setAuthor('Alexandre');
+    $advert->setContent("Nous recherchons un développeur Symfony débutant sur Lyon. Blabla…");
+    // On peut ne pas définir ni la date ni la publication,
+    // car ces attributs sont définis automatiquement dans le constructeur
+
+    // On récupère l'EntityManager
+    $em = $this->getDoctrine()->getManager();
+
+    // Étape 1 : On « persiste » l'entité
+    $em->persist($advert);
+
+    // Étape 2 : On « flush » tout ce qui a été persisté avant
+    $em->flush();
+
+    // Reste de la méthode qu'on avait déjà écrit
+    if ($request->isMethod('POST')) {
+      $request->getSession()->getFlashBag()->add('notice', 'Annonce bien enregistrée.');
+
+      // Puis on redirige vers la page de visualisation de cettte annonce
+      return $this->redirectToRoute('oc_platform_view', array('id' => $advert->getId()));
+    }
+
+    // Si on n'est pas en POST, alors on affiche le formulaire
+    return $this->render('OCPlatformBundle:Advert:add.html.twig', array('advert' => $advert));
+	}
+   }	
+----------------------------------------------------------------------------------
+
+
+----------------------------------------------------------------------------------
+$em->persist($advert);
+$em->persist($comment);
+$em->detach($advert);
+$em->flush(); // Enregistre $comment mais pas $advert
+-----------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------
+$em->persist($advert);
+$em->persist($comment);
+$em->clear();
+$em->flush(); // N'exécutera rien, car les deux persists sont annulés par le clear
+-----------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------
+//contains($entite)retournetruesi l'entité donnée en argument est gérée par l'EntityManager (s'il y a eu unpersist()sur l'entité donc). Voici un exemple :
+$em->persist($advert);
+var_dump($em->contains($advert)); // Affiche true
+var_dump($em->contains($comment)); // Affiche false
+-----------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------
+//refresh($entite)met à jour l'entité donnée en argument dans l'état où elle est en base de données. 
+//Cela écrase et donc annule tous les changements qu'il a pu y avoir sur l'entité concernée. Voici un exemple :
+
+$advert->setTitle('Un nouveau titre');
+$em->refresh($advert);
+var_dump($advert->getTitle()); // Affiche « Un ancien titre »
+--------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------------
+$em->remove($advert);
+$em->flush(); // Exécute un DELETE sur $advert
+-----------------------------------------------------------------------------------
+
+
